@@ -100,6 +100,7 @@ print(mysqlConnection)
 cursor = mysqlConnection.cursor()
 insertStatement = config['mysql-app-config']['mysql.transactions_stage_unique.insert']
 
+thisRunTransactionUUID = str(uuid.uuid4())
 numRows = 0
 numProcessed = 0
 numErrors = 0
@@ -137,7 +138,7 @@ for row in reader:
         sourceTransactionAmt = transactionsUtil.stringToFloatOrNone(row[inOutColumnMap['source_transaction_amount']])
 
         insertTransactionDict = {'brokerage_account_number' : accountNumber,
-                    'transaction_id' : '1',
+                    'transaction_id' : thisRunTransactionUUID,
                     'transaction_date': runDate,
                     'transaction_desc' : row[inOutColumnMap['transaction_desc']].strip(),
                     'transaction_type' : transactionType,
