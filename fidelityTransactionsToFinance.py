@@ -1,15 +1,9 @@
-import getopt
 import argparse
 import csv
-import datetime
 import uuid
 import mysql.connector
 import configparser
 import json
-
-# application modules
-import fidelityValidation
-import transactionsUtil
 
 # Initialize parser
 parser = argparse.ArgumentParser()
@@ -26,55 +20,14 @@ print("Program arguments = " + str(args))
 
 config = configparser.ConfigParser()
 config.read([args.config, 'application.ini'])
-print("Config parameters = " + str(config))
+#print("Config parameters = " + str(config))
 
-smaAccount = config['fidelity-account-config']['sma.account']
-smatransactionTypeMap = {
-    "YOU BOUGHT" : "BUY",
-    "YOU SOLD" : "SELL",
-    "DIVIDEND RECEIVED" : "DIV-CASH",
-    "TRANSFERRED FROM" : "EFT-IN",
-    "DISTRIBUTION" : "SPLIT",
-    "ADVISORY FEE" : "FEE",
-    "MERGER MER PAYOUT" : "MERGR-AQUIS-OUT",
-    "FOREIGN TAX PAID" : "TAX-FOREIGN",
-    "MERGER MER FROM" : "MERGR-AQUIS-IN",
-    "IN LIEU OF FRX SHARE" : "MISC-IN"
-}
-
-brokerageAccount = config['fidelity-account-config']['brokerage.account']
-brokeragetransactionTypeMap = {
-    "YOU BOUGHT" : "BUY",
-    "YOU SOLD" : "SELL",
-    "DIVIDEND RECEIVED" : "DIV-CASH",
-    "REINVESTMENT" : "DIV-REINVEST",
-    "TRANSFERRED FROM" : "EFT-IN"
-}
-
-transactionValidationMap = {
-    "BUY" : fidelityValidation.validateBuy,
-    "SELL" : fidelityValidation.validateSell,
-    "DIV-CASH" : fidelityValidation.validateDividendCash,
-    "DIV-REINVEST" : fidelityValidation.validateReinvestDividend,
-    "EFT-IN" : fidelityValidation.validateETFIn,
-    "FEE" : fidelityValidation.validateFee,
-    "SPLIT" : fidelityValidation.validateSplit_MergerIn,
-    "TAX-FOREIGN" : fidelityValidation.validateForeignTax,
-    "MERGR-AQUIS-IN" : fidelityValidation.validateSplit_MergerIn,
-    "MERGR-AQUIS-OUT" : fidelityValidation.validateMergerOut,
-    "MISC-IN" : fidelityValidation.validateMiscIn
-}
-
-if args.account == 'SMA':
-     accountNumber = smaAccount
-     transactionTypeMap = smatransactionTypeMap
-     inOutColumnMap = json.loads(config['column-mapping-config']['sma.input.output.columnmap'])
-elif args.account == 'Brokerage':
-     accountNumber = brokerageAccount
-     transactionTypeMap = brokeragetransactionTypeMap
-     inOutColumnMap = json.loads(config['column-mapping-config']['brokerage.input.output.columnmap'])
-else:
-     raise RuntimeError("Unknown account " + args.account)
+try:
+    module = __import__(config[args.account + '-processor']['row.processor.module'])
+    rowProcessorClass = getattr(module, config[args.account + '-processor']['row.processor.class'])(config)
+    print(f"Transaction row processor = '{rowProcessorClass}'")
+except Exception as error:
+    raise RuntimeError("Config parsing exception for account = " + args.account + "', error = " + str(error))
 
 fieldnames = json.loads(config['application-config']['output.file.header.columnnames'])
 outputFile = open(args.output, 'w', newline='')
@@ -96,7 +49,7 @@ mysqlConnection = mysql.connector.connect(
   user=mySqlUser,
   password=mySqlPwd
 )
-print(mysqlConnection)
+print(f"MySQL host = '{mySqlHost}', user = '{mySqlUser}'")
 cursor = mysqlConnection.cursor()
 insertStatement = config['mysql-app-config']['mysql.transactions_stage_unique.insert']
 
@@ -108,51 +61,13 @@ numInserted = 0
 reader = csv.DictReader(args.input)
 for row in reader:
         numRows += 1
-        #  Fidelity run date sample date = ' 03/27/2023'
-        runDate = datetime.datetime.strptime(row[inOutColumnMap['transaction_date']], " %m/%d/%Y").strftime("%Y-%m-%d")
-        # Fidelity output transaction date format = '2023-03-27'
 
         rowWriter = writer
-        transactionTypeMatch = 0
         valid = False
         errorsList = []
-        
-        for key in transactionTypeMap:
-            if key in row['Action']:
-                transactionType = transactionTypeMap[key]
-                transactionTypeMatch += 1
 
-        if (transactionTypeMatch == 1):
-            valid = True
-        else:
-            transactionType = 'ERROR'
-            if (transactionTypeMatch == 0):
-                errorsList.append("UNKNOWN TRANSACTION TYPE")
-            else:
-                errorsList.append("MULTIPLE TRANSACTION TYPE MATCHES")
-
-        sourceShares = transactionsUtil.stringToFloatOrNone(row[inOutColumnMap['source_shares']])
-        sourcePricePerShare = transactionsUtil.stringToFloatOrNone(row[inOutColumnMap['source_price_per_share']])
-        sourceFees = transactionsUtil.stringToFloatOrNone(row[inOutColumnMap['source_fees']])
-        sourceCommissions = transactionsUtil.stringToFloatOrNone(row[inOutColumnMap['source_commissions']])
-        sourceTransactionAmt = transactionsUtil.stringToFloatOrNone(row[inOutColumnMap['source_transaction_amount']])
-
-        insertTransactionDict = {'brokerage_account_number' : accountNumber,
-                    'transaction_id' : thisRunTransactionUUID,
-                    'transaction_date': runDate,
-                    'transaction_desc' : row[inOutColumnMap['transaction_desc']].strip(),
-                    'transaction_type' : transactionType,
-                    'symbol' : row[inOutColumnMap['symbol']].strip(),
-                    'name' : row[inOutColumnMap['name']].strip(),
-                    'source_shares' : sourceShares,
-                    'source_price_per_share' : sourcePricePerShare,
-                    'source_fees' : sourceFees,
-                    'source_commissions' : sourceCommissions,
-                    'source_transaction_amount' : sourceTransactionAmt
-                    }
-
-        if (valid):
-            valid, errorsList = transactionValidationMap[transactionType](insertTransactionDict)
+        valid, errorsList, insertTransactionDict = rowProcessorClass.transactionDictionaryFromRow(row)
+        insertTransactionDict['transaction_id'] = thisRunTransactionUUID
 
         if (valid):
             numProcessed += 1
