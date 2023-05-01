@@ -1,3 +1,4 @@
+
 import argparse
 import csv
 import uuid
@@ -66,8 +67,7 @@ for row in reader:
         valid = False
         errorsList = []
 
-        valid, errorsList, insertTransactionDict = rowProcessorClass.transactionDictionaryFromRow(row)
-        insertTransactionDict['transaction_id'] = thisRunTransactionUUID
+        valid, errorsList, insertTransactionDict = rowProcessorClass.transactionDictionaryFromRow(row, thisRunTransactionUUID)
 
         if (valid):
             numProcessed += 1
