@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--input", type=open, required=True, help="Transaction input csv file")
 parser.add_argument("-o", "--output", type=str, required=True, help="Transaction output csv file")
 parser.add_argument("-e", "--error", type=str, default="error.csv", help="Path to error output file")
-parser.add_argument("-a", "--account", type=str, required=True, help="SMA or Brokerage")
+parser.add_argument("-a", "--account", type=str, required=True, help="SMA, Brokerage, Empower, etc.")
 parser.add_argument("-c", "--config", type=str, default="config.ini", help="Path to configuration file")
 parser.add_argument("-w", "--writedb", action='store_true', help="Write inserts to DB (default is dry run)")
 # Read arguments from command line
