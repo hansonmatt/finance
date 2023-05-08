@@ -101,7 +101,8 @@ class FidelityTransactionRowProcessor(transaction_row_processor.TransactionRowPr
             'source_price_per_share' : sourcePricePerShare,
             'source_fees' : sourceFees,
             'source_commissions' : sourceCommissions,
-            'source_transaction_amount' : sourceTransactionAmt
+            'source_transaction_amount' : sourceTransactionAmt,
+            'transaction_notes' : None
         }
 
         if (valid):
@@ -116,7 +117,8 @@ class BrokerageTransactionRowProcessor(FidelityTransactionRowProcessor):
     "YOU SOLD" : "SELL",
     "DIVIDEND RECEIVED" : "DIV-CASH",
     "REINVESTMENT" : "DIV-REINVEST",
-    "TRANSFERRED FROM" : "EFT-IN"
+    "TRANSFERRED FROM" : "EFT-IN",
+    "REDEMPTION PAYOUT UNITED STATES TREAS BILLS" : "SELL"
     }
 
     def __init__(self, theConfig):

@@ -6,6 +6,7 @@ import transactionsUtil
 class RedriveTransactionRowProcessor(transaction_row_processor.TransactionRowProcessor):
     def __init__(self, theConfig):
         self.config = theConfig
+        self.transactionUUID = str(uuid.uuid4())
 
     # return a transaction dictionary from input row
     def transactionDictionaryFromRow(self, theRow, theTransitionUUID):
@@ -14,7 +15,8 @@ class RedriveTransactionRowProcessor(transaction_row_processor.TransactionRowPro
         for field in fieldnames:
             fieldValue = transactionsUtil.anyToAnyOrNone(theRow[field])
             insertTransactionDict[field] = fieldValue
+        
+        insertTransactionDict['transaction_id'] = 'REDRIVE-' + self.transactionUUID
 
-        insertTransactionDict['transaction_id'] = "REDRIVE-" + str(uuid.uuid4())
         print(f"RedriveTransactionRowProcessor.transactionDictionaryFromRow, insert row = {insertTransactionDict}")
         return True, [], insertTransactionDict

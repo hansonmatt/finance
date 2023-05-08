@@ -1,7 +1,6 @@
 
 import argparse
 import csv
-import uuid
 import mysql.connector
 import configparser
 import json
@@ -15,6 +14,7 @@ parser.add_argument("-e", "--error", type=str, default="error.csv", help="Path t
 parser.add_argument("-a", "--account", type=str, required=True, help="SMA, Brokerage, Empower, etc.")
 parser.add_argument("-c", "--config", type=str, default="config.ini", help="Path to configuration file")
 parser.add_argument("-w", "--writedb", action='store_true', help="Write inserts to DB (default is dry run)")
+parser.add_argument("-f", "--force", action='store_true', help="Force DB insert, ignoring errors. Must be used with --writedb")
 # Read arguments from command line
 args = parser.parse_args()
 print("Program arguments = " + str(args))
@@ -54,7 +54,7 @@ print(f"MySQL host = '{mySqlHost}', user = '{mySqlUser}'")
 cursor = mysqlConnection.cursor()
 insertStatement = config['mysql-app-config']['mysql.transactions_stage_unique.insert']
 
-thisRunTransactionUUID = str(uuid.uuid4())
+thisRunTransactionUUID = '1'
 numRows = 0
 numProcessed = 0
 numErrors = 0
@@ -102,8 +102,12 @@ outputFile.close()
 errorFile.close()
 
 if (args.writedb):
-    if (numInserted == numRows):
-        print("All good, committing inserts")
+    print(f"Write DB flag encountered.")
+    if ((numInserted == numRows) or args.force):
+        if (numInserted != numRows and args.force):
+            print(f"Forcing DB writes with '{numErrors}' errors!")
+        
+        print("Committing inserts")
         mysqlConnection.commit()
     else:
         print("Rows inserted '" + str(numInserted) + "' not equal to rows processed '" + str(numRows)+ "'. Rolling back inserts")
