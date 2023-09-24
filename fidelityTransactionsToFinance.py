@@ -101,20 +101,31 @@ print("Found '" + str(numRows) + "' rows in input file. Processed '" + str(numPr
 outputFile.close()
 errorFile.close()
 
+commit = False
 if (args.writedb):
     print(f"Write DB flag encountered.")
-    if ((numInserted == numRows) or args.force):
-        if (numInserted != numRows and args.force):
-            print(f"Forcing DB writes with '{numErrors}' errors!")
-        
-        print("Committing inserts")
-        mysqlConnection.commit()
+    if (numInserted == numRows):
+        #if (numInserted != numRows and args.force):
+        print(f"Write DB and {numInserted} equals '{numRows}' rows processed. Commit inserts")
+        commit = True
+        #print("Committing inserts")
+        #mysqlConnection.commit()
+    elif args.force:
+        print(f"Forcing {numInserted} DB writes with '{numErrors}' errors!")
+        commit = True
     else:
         print("Rows inserted '" + str(numInserted) + "' not equal to rows processed '" + str(numRows)+ "'. Rolling back inserts")
-        mysqlConnection.rollback()
+        #mysqlConnection.rollback()
 else:
     print("This is a dryrun, rolling back inserts")
+    #mysqlConnection.rollback()
+
+if (commit):
+    mysqlConnection.commit()
+    print("Inserts committed")
+else:
     mysqlConnection.rollback()
+    print("Inserts rolled back")
 
 cursor.close()
 mysqlConnection.close()

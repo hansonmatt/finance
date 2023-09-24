@@ -118,6 +118,7 @@ class BrokerageTransactionRowProcessor(FidelityTransactionRowProcessor):
     "DIVIDEND RECEIVED" : "DIV-CASH",
     "REINVESTMENT" : "DIV-REINVEST",
     "TRANSFERRED FROM" : "EFT-IN",
+    "Electronic Funds Transfer Received (Cash)" : "EFT-IN",
     "REDEMPTION PAYOUT UNITED STATES TREAS BILLS" : "SELL"
     }
 
