@@ -115,9 +115,60 @@ class VanguardTransactionRowProcessor(transaction_row_processor.TransactionRowPr
         print("Rollover out validation complete and valid...")
         return validTransaction, validationErrors
     
-    def validateNotImplemented(transactionDict, errorsList):
-        errorsList.append("Validation for transaction type '" + transactionDict['transaction_type'] + "' not yet implemented")
-        return False
+    def validateDivCash(transactionDict):
+        print("Dividend validation...")
+
+        validationErrors = []
+        validTransaction = True
+
+        if (transactionDict['transaction_type'] != transactionsUtil.DIVCASH):
+            validationErrors.append("Transaction type '" + transactionDict['transaction_type'] + "' must be " + transactionsUtil.DIVCASH)
+            validTransaction = False
+
+        if (not float(transactionDict['source_shares']) == 0):
+            validationErrors.append("Shares '" + transactionDict['source_shares'] + "' must be 0")
+            validTransaction = False
+
+        if (not float(transactionDict['source_price_per_share']) == 1):
+            validationErrors.append("Price per share '" + transactionDict['source_price_per_share'] + "' must be 0")
+            validTransaction = False
+        
+        if (float(transactionDict['source_transaction_amount']) <= 0):
+            validationErrors.append("Transaction amount '" + transactionDict['source_transaction_amount'] + "' must be positive")
+            validTransaction = False
+    
+        print("ETF validation complete...")
+        return validTransaction, validationErrors
+    
+    def validateDividendReinvestment(transactionDict):
+        print("Dividend reinvestment validation...")
+        
+        validationErrors = []
+        validTransaction = True
+
+        if (transactionDict['transaction_type'] != transactionsUtil.DIVREINVEST):
+            validationErrors.append("Transaction type '" + transactionDict['transaction_type'] + "' must be " + transactionsUtil.DIVREINVEST)
+            validTransaction = False
+
+        if (float(transactionDict['source_shares']) <= 0):
+            validationErrors.append("Shares '" + transactionDict['source_shares'] + "' must be positive")
+            validTransaction = False
+
+        if (float(transactionDict['source_price_per_share']) <= 0):
+            validationErrors.append("Price per share '" + transactionDict['source_price_per_share'] + "' must be positive")
+            validTransaction = False
+        
+        if (float(transactionDict['source_transaction_amount']) >= 0):
+            validationErrors.append("Transaction amount '" + transactionDict['source_transaction_amount'] + "' must be negative")
+            validTransaction = False
+    
+        print("Buy validation complete...")
+        return validTransaction, validationErrors
+    
+    def validateNotImplemented(transactionDict):
+        validationErrors = []
+        validationErrors.append("Validation for transaction type '" + transactionDict['transaction_type'] + "' not yet implemented")
+        return False, validationErrors
 
     transactionValidationMap = {
         transactionsUtil.EFTIN : validateETFIn,
@@ -125,8 +176,8 @@ class VanguardTransactionRowProcessor(transaction_row_processor.TransactionRowPr
         transactionsUtil.ROLLOVEROUT : validateRolloverOut,
         transactionsUtil.ROLLOVERIN : validateRolloverIn,
         transactionsUtil.LTCAPGAIN : validateNotImplemented,
-        transactionsUtil.DIVREINVEST : validateNotImplemented,
-        transactionsUtil.DIVCASH : validateNotImplemented
+        transactionsUtil.DIVREINVEST : validateDividendReinvestment,
+        transactionsUtil.DIVCASH : validateDivCash
     }
 
     def __init__(self, theConfig):

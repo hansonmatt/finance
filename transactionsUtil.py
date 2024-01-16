@@ -11,6 +11,7 @@ ROLLOVEROUT = 'ROLLOVER-OUT'
 LTCAPGAIN = 'LT-CAP-GAIN'
 DIVCASH = 'DIV-CASH'
 DIVREINVEST = 'DIV-REINVEST'
+FEE = 'FEE'
 
 def stringToFloatOrNone(theString):
     return float(theString) if theString else None

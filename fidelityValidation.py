@@ -231,7 +231,7 @@ def validateMergerOut(transactionDict):
         validationErrors.append("Shares '" + transactionDict['source_shares'] + "' is empty or positive")
 
     if (transactionDict['source_price_per_share']):
-        validationErrors.append("Price/share '" + transactionDict['source_price_per_share'] + "' must be empty")
+        validationErrors.append("Price/share '" + str(transactionDict['source_price_per_share']) + "' must be empty")
 
     if (transactionDict['source_transaction_amount']):
         validationErrors.append("Transaction amount '" + str(transactionDict['source_transaction_amount']) + "' must be empty")
