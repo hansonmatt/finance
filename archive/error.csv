@@ -1,1 +1,0 @@
-brokerage_account_number,transaction_id,transaction_date,transaction_type,transaction_desc,symbol,name,source_shares,currency,source_price_per_share,source_fees,source_commissions,source_transaction_amount,normalized_shares,normalized_transaction_amount,transaction_notes,errors
